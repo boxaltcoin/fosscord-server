@@ -56,19 +56,19 @@ const ONLY_CACHE_JS = process.env.ONLY_CACHE_JS ? true : false;
 
 // Manual for now
 const INDEX_SCRIPTS = [
-	"b456855ec667950dcf68", // 50
-	"cfb9efe961b2bf3647bc", // 1
-	"f98a039261c37f892cbf", // 0?
-	"4470c87bb13810847db0", // ~4500.
+	"88f54208156858234e37", // 50
+	"65ad73d56074822b054d", // 1
+	"b453c42b462f646731fd", // 0?
+	"7b5dbd94c7da60783056", // ~4500.
 
 	// also fetch other assets from index, as they aren't cached
-	"40532.f4ff6c4a39fa78f07880.css",
-	"b21a783b953e52485dcb.worker.js",
-	"2bbea887c6d07e427a1d.worker.js",
-	"0ec5df6d78ff7a5cc7c8.worker.js",
+	"40532.4c71de3973cf6488a4df.css",
+	"565b1ac7e5ee54a2f669.worker.js",
+	"625ccb6efce655a7d928.worker.js",
+	"6c41dee384acd3663bbc.worker.js",
 	"05422eb499ddf5616e44a52c4f1063ae.woff2",
-	"77f603cc7860fcb784e6ef9320a4a9c2.woff2",
-	"e689380400b1f2d2c6320a823a1ab079.svg",
+	"980082c4328266be3342a03dcb37c432.woff2",
+	"e55012627a8f6e7203b72a8de730c483.woff2",
 ];
 
 const doPatch = (content) => {
