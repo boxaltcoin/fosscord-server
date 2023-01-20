@@ -32,18 +32,16 @@ import { DiscordApiErrors } from "../util/Constants";
 import { ReadyGuildDTO } from "../dtos";
 
 export const MemberPrivateProjection: (keyof Member)[] = [
-	"id",
-	"guild",
-	"guild_id",
+	"avatar",
+	"communication_disabled_until",
 	"deaf",
+	// "flags",
 	"joined_at",
-	"last_message_id",
 	"mute",
 	"nick",
 	"pending",
 	"premium_since",
 	"roles",
-	"settings",
 	"user",
 ];
 

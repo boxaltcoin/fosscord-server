@@ -21,6 +21,7 @@ import {
 	Presence,
 	UserSettings,
 	IReadyGuildDTO,
+	ReadyUserGuildSettingsEntries,
 } from "@fosscord/util";
 
 export interface Event {
@@ -95,7 +96,7 @@ export interface ReadyEventData {
 		version: number;
 	};
 	user_guild_settings?: {
-		entries: UserGuildSettings[];
+		entries: ReadyUserGuildSettingsEntries[];
 		version: number;
 		partial: boolean;
 	};

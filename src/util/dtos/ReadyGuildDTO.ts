@@ -1,4 +1,21 @@
-import { Channel, Emoji, Guild, Member, Role, Sticker } from "../entities";
+import {
+	Channel,
+	ChannelOverride,
+	Emoji,
+	Guild,
+	Member,
+	Role,
+	Sticker,
+	UserGuildSettings,
+} from "../entities";
+
+// TODO: this is not the best place for this type
+export type ReadyUserGuildSettingsEntries = Omit<
+	UserGuildSettings,
+	"channel_overrides"
+> & {
+	channel_overrides: (ChannelOverride & { channel_id: string })[];
+};
 
 export interface IReadyGuildDTO {
 	application_command_counts?: { 1: number; 2: number; 3: number }; // ????????????
@@ -46,6 +63,7 @@ export interface IReadyGuildDTO {
 	stickers: Sticker[];
 	threads: any[];
 	version: string;
+	guild_hashes: {};
 }
 
 export class ReadyGuildDTO implements IReadyGuildDTO {
@@ -94,6 +112,7 @@ export class ReadyGuildDTO implements IReadyGuildDTO {
 	stickers: Sticker[];
 	threads: any[];
 	version: string;
+	guild_hashes: {};
 
 	constructor(guild: Guild) {
 		this.application_command_counts = {
@@ -145,6 +164,7 @@ export class ReadyGuildDTO implements IReadyGuildDTO {
 		this.stickers = guild.stickers;
 		this.threads = [];
 		this.version = "1"; // ??????
+		this.guild_hashes = {};
 	}
 
 	toJSON() {
