@@ -26,7 +26,6 @@ import {
 	Session,
 	EVENTEnum,
 	Config,
-	PublicMember,
 	PublicUser,
 	PrivateUserProjection,
 	ReadState,
@@ -36,22 +35,15 @@ import {
 	PrivateSessionProjection,
 	MemberPrivateProjection,
 	PresenceUpdateEvent,
-	UserSettings,
 	IdentifySchema,
 	DefaultUserGuildSettings,
-	UserGuildSettings,
 	ReadyGuildDTO,
 	Guild,
 	PublicUserProjection,
-	ChannelOverride,
 	ReadyUserGuildSettingsEntries,
 } from "@fosscord/util";
 import { Send } from "../util/Send";
 import { CLOSECODES, OPCODES } from "../util/Constants";
-import { genSessionId } from "../util/SessionUtils";
-import { setupListener } from "../listener/listener";
-// import experiments from "./experiments.json";
-const experiments: any = [];
 import { check } from "./instanceOf";
 import { Recipient } from "@fosscord/util";
 
@@ -163,14 +155,16 @@ export async function onIdentify(this: WebSocket, data: Payload) {
 					...Object.fromEntries(
 						MemberPrivateProjection.map((x) => [x, true]),
 					),
+					settings: true, // guild settings
 					// We also only want some guild props
-					guild: {
-						id: true,
-						large: true,
-						// lazy: true,
-						member_count: true,
-						premium_subscription_count: true,
-					},
+					// guild: {
+					// 	id: true,
+					// 	large: true,
+					// 	// lazy: true,
+					// 	member_count: true,
+					// 	premium_subscription_count: true,
+					// },
+					guild: true,
 				},
 				relations: [
 					"guild",
@@ -178,6 +172,7 @@ export async function onIdentify(this: WebSocket, data: Payload) {
 					"guild.emojis",
 					"guild.roles",
 					"guild.stickers",
+					"user",
 					"roles",
 				],
 			}),
@@ -320,8 +315,6 @@ export async function onIdentify(this: WebSocket, data: Payload) {
 				...new ReadyGuildDTO(x).toJSON(),
 				joined_at: x.joined_at,
 			})),
-		guild_experiments: [],
-		geo_ordered_rtc_regions: [],
 		relationships: user.relationships.map((x) => x.toPublicRelationship()),
 		read_state: {
 			entries: read_states,
@@ -338,20 +331,30 @@ export async function onIdentify(this: WebSocket, data: Payload) {
 		},
 		private_channels: channels,
 		session_id: this.session_id,
-		analytics_token: "",
-		connected_accounts: [],
+		country_code: user.settings.locale, // TODO: do ip analysis instead
+		users: users.unique(),
+		merged_members: merged_members,
+		sessions: allSessions,
+
 		consents: {
 			personalization: {
 				consented: false, // TODO
 			},
 		},
-		country_code: user.settings.locale, // TODO: do ip analysis instead
-		friend_suggestion_count: 0,
 		experiments: [],
 		guild_join_requests: [],
-		users: users.unique(),
-		merged_members: merged_members,
-		sessions: allSessions,
+		connected_accounts: [],
+		guild_experiments: [],
+		geo_ordered_rtc_regions: [],
+		api_code_version: 1,
+		friend_suggestion_count: 0,
+		analytics_token: "",
+		tutorial: null,
+		resume_gateway_url:
+			Config.get().gateway.endpointClient ||
+			Config.get().gateway.endpointPublic ||
+			"ws://127.0.0.1:3001",
+		session_type: "norma;", // TODO
 	};
 
 	// Send READY
