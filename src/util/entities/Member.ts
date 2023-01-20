@@ -33,7 +33,7 @@ import {
 	RelationId,
 } from "typeorm";
 import { Guild } from "./Guild";
-import { Config, emitEvent, FieldErrors } from "../util";
+import { Config, emitEvent } from "../util";
 import {
 	GuildCreateEvent,
 	GuildDeleteEvent,
@@ -210,12 +210,16 @@ export class Member extends BaseClassWithoutId {
 	}
 
 	static async addRole(user_id: string, guild_id: string, role_id: string) {
-		const [member, role] = await Promise.all([
+		const [member] = await Promise.all([
 			Member.findOneOrFail({
 				where: { id: user_id, guild_id },
 				relations: ["user", "roles"], // we don't want to load  the role objects just the ids
-				//@ts-ignore
-				select: ["index", "roles.id"], // TODO fix type
+				select: {
+					index: true,
+					roles: {
+						id: true,
+					},
+				},
 			}),
 			Role.findOneOrFail({
 				where: { id: role_id, guild_id },
@@ -247,8 +251,12 @@ export class Member extends BaseClassWithoutId {
 			Member.findOneOrFail({
 				where: { id: user_id, guild_id },
 				relations: ["user", "roles"], // we don't want to load  the role objects just the ids
-				//@ts-ignore
-				select: ["roles.id", "index"], // TODO: fix type
+				select: {
+					index: true,
+					roles: {
+						id: true,
+					},
+				},
 			}),
 			await Role.findOneOrFail({ where: { id: role_id, guild_id } }),
 		]);
@@ -325,7 +333,7 @@ export class Member extends BaseClassWithoutId {
 				guild_id,
 				user: {
 					sessions: {
-						status: Not("invisible" as "invisible"), // lol typescript?
+						status: Not("invisible" as const), // lol typescript?
 					},
 				},
 			},
@@ -504,8 +512,7 @@ export const PublicMemberProjection: PublicMemberKeys[] = [
 	"premium_since",
 ];
 
-// @ts-ignore
-export type PublicMember = Pick<Member, Omit<PublicMemberKeys, "roles">> & {
+export type PublicMember = Omit<Pick<Member, PublicMemberKeys>, "roles"> & {
 	user: PublicUser;
 	roles: string[]; // only role ids not objects
 };

@@ -229,7 +229,6 @@ export async function onIdentify(this: WebSocket, data: Payload) {
 	});
 
 	// Generate user_guild_settings
-	// TODO: move this type somewhere?
 	const user_guild_settings_entries: ReadyUserGuildSettingsEntries[] =
 		members.map((x) => ({
 			...DefaultUserGuildSettings,
@@ -269,11 +268,10 @@ export async function onIdentify(this: WebSocket, data: Payload) {
 		select: PrivateSessionProjection,
 	});
 
-	await Promise.all([
+	Promise.all([
 		emitEvent({
 			event: "SESSIONS_REPLACE",
 			user_id: this.user_id,
-			// We need to find all sessions for the current user
 			data: allSessions,
 		} as SessionsReplace),
 		emitEvent({
@@ -299,7 +297,6 @@ export async function onIdentify(this: WebSocket, data: Payload) {
 		application: application
 			? { id: application.id, flags: application.flags }
 			: undefined,
-		//@ts-ignore TODO
 		user: user,
 		user_settings: user.settings,
 		guilds: guilds
