@@ -1,3 +1,21 @@
+/*
+	Fosscord: A FOSS re-implementation and extension of the Discord.com backend.
+	Copyright (C) 2023 Fosscord and Fosscord Contributors
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published
+	by the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 import {
 	BeforeInsert,
 	BeforeUpdate,
@@ -101,10 +119,10 @@ export class User extends BaseClass {
 	mobile: boolean = false; // if the user has mobile app installed
 
 	@Column()
-	premium: boolean = Config.get().defaults.user.premium; // if user bought individual premium
+	premium: boolean = Config.get().defaults.user.premium ?? false; // if user bought individual premium
 
 	@Column()
-	premium_type: number = Config.get().defaults.user.premiumType; // individual premium level
+	premium_type: number = Config.get().defaults.user.premiumType ?? 0; // individual premium level
 
 	@Column()
 	bot: boolean = false; // if user is bot
@@ -134,7 +152,7 @@ export class User extends BaseClass {
 	premium_since: Date; // premium date
 
 	@Column({ select: false })
-	verified: boolean = Config.get().defaults.user.verified; // email is verified
+	verified: boolean = Config.get().defaults.user.verified ?? true; // email is verified
 
 	@Column()
 	disabled: boolean = false; // if the account is disabled

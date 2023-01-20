@@ -1,3 +1,21 @@
+/*
+	Fosscord: A FOSS re-implementation and extension of the Discord.com backend.
+	Copyright (C) 2023 Fosscord and Fosscord Contributors
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published
+	by the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 import { WebSocket, Payload, CLOSECODES, OPCODES } from "@fosscord/gateway";
 import OPCodeHandlers from "../opcodes";
 import { check } from "../opcodes/instanceOf";
@@ -5,6 +23,8 @@ import WS from "ws";
 import { PayloadSchema } from "@fosscord/util";
 import * as Sentry from "@sentry/node";
 import BigIntJson from "json-bigint";
+import path from "path";
+import fs from "fs/promises";
 const bigIntJson = BigIntJson({ storeAsString: true });
 
 var erlpack: any;
@@ -40,6 +60,21 @@ export async function Message(this: WebSocket, buffer: WS.Data) {
 
 	if (process.env.WS_VERBOSE)
 		console.log(`[Websocket] Incomming message: ${JSON.stringify(data)}`);
+
+	if (process.env.WS_DUMP) {
+		const id = this.session_id || "unknown";
+
+		await fs.mkdir(path.join("dump", id), { recursive: true });
+		await fs.writeFile(
+			path.join("dump", id, `${Date.now()}.in.json`),
+			JSON.stringify(data, null, 2),
+		);
+
+		if (!this.session_id)
+			console.log(
+				"[Gateway] Unknown session id, dumping to unknown folder",
+			);
+	}
 
 	check.call(this, PayloadSchema, data);
 

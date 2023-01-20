@@ -1,4 +1,22 @@
 /*
+	Fosscord: A FOSS re-implementation and extension of the Discord.com backend.
+	Copyright (C) 2023 Fosscord and Fosscord Contributors
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published
+	by the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/*
 	This file downloads a ( mostly ) complete discord.com web client for testing,
 	and performs some basic patching:
 	* Replaces all mentions of "Server" -> "Guild"
@@ -16,6 +34,7 @@
 	TODO: Make this configurable easily.
 */
 
+require("dotenv/config");
 const path = require("path");
 const fetch = require("node-fetch");
 const http = require("http");
@@ -33,6 +52,7 @@ const CACHE_PATH = path.join(__dirname, "..", "assets", "cache");
 const BASE_URL = "https://discord.com";
 
 const INSTANCE_NAME = "Fosscord";
+const ONLY_CACHE_JS = process.env.ONLY_CACHE_JS ? true : false;
 
 // Manual for now
 const INDEX_SCRIPTS = [
@@ -40,6 +60,15 @@ const INDEX_SCRIPTS = [
 	"cfb9efe961b2bf3647bc", // 1
 	"f98a039261c37f892cbf", // 0?
 	"4470c87bb13810847db0", // ~4500.
+
+	// also fetch other assets from index, as they aren't cached
+	"40532.f4ff6c4a39fa78f07880.css",
+	"b21a783b953e52485dcb.worker.js",
+	"2bbea887c6d07e427a1d.worker.js",
+	"0ec5df6d78ff7a5cc7c8.worker.js",
+	"05422eb499ddf5616e44a52c4f1063ae.woff2",
+	"77f603cc7860fcb784e6ef9320a4a9c2.woff2",
+	"e689380400b1f2d2c6320a823a1ab079.svg",
 ];
 
 const doPatch = (content) => {
@@ -64,6 +93,12 @@ const doPatch = (content) => {
 	content = content.replaceAll(/Discord's/g, `${INSTANCE_NAME}'s`);
 	//content = content.replaceAll(/DiscordTag/g, "FosscordTag");
 	content = content.replaceAll(/\*Discord\*/g, `*${INSTANCE_NAME}*`);
+
+	// Replace window title
+	content = content.replaceAll(
+		":c.base;",
+		`:(c.base == 'Discord' ? '${INSTANCE_NAME}' : c.base);`,
+	);
 
 	//server -> guild
 	const serverVariations = [
@@ -157,12 +192,9 @@ const doPatch = (content) => {
 };
 
 const processFile = async (name) => {
-	const res = await fetch(
-		`${BASE_URL}/assets/${name}${name.includes(".") ? "" : ".js"}`,
-		{
-			agent,
-		},
-	);
+	const url = `${BASE_URL}/assets/${name}${name.includes(".") ? "" : ".js"}`;
+	if (ONLY_CACHE_JS && !url.endsWith(".js")) return [];
+	const res = await fetch(url, { agent });
 	if (res.status !== 200) {
 		return [];
 	}
@@ -181,9 +213,20 @@ const processFile = async (name) => {
 		text,
 	);
 
-	return [...new Set(text.match(/\"[A-Fa-f0-9]{20}\"/g))].map((x) =>
-		x.replaceAll('"', ""),
+	var additional = [];
+	additional.push(...new Set(text.match(/\"[A-Fa-f0-9]{20}\"/g)));
+	additional.push(
+		...[
+			...new Set(text.matchAll(/\.exports=.\..\+\"(.*?\..{0,5})\"/g)),
+		].map((x) => x[1]),
 	);
+
+	return additional.map((x) => x.replaceAll('"', ""));
+};
+
+const print = (x) => {
+	var repeat = process.stdout.columns - x.length;
+	process.stdout.write(`${x}${" ".repeat(Math.max(0, repeat))}\r`);
 };
 
 (async () => {
@@ -198,17 +241,13 @@ const processFile = async (name) => {
 	while (INDEX_SCRIPTS.length > 0) {
 		const asset = INDEX_SCRIPTS.shift();
 
-		process.stdout.clearLine(0);
-		process.stdout.cursorTo(0);
-		process.stdout.write(
-			`Scraping asset ${asset}. Remaining: ${INDEX_SCRIPTS.length}`,
-		);
+		print(`Scraping asset ${asset}. Remaining: ${INDEX_SCRIPTS.length}`);
 
 		const newAssets = await processFile(asset);
 		assets.push(...newAssets);
 	}
 
-	process.stdout.moveCursor(0, 1);
+	console.log();
 
 	const CACHE_MISSES = (
 		await fs.readFile(path.join(CACHE_PATH, "..", "cacheMisses"))
@@ -219,9 +258,8 @@ const processFile = async (name) => {
 		.split("\n");
 	while (CACHE_MISSES.length > 0) {
 		const asset = CACHE_MISSES.shift();
-		process.stdout.clearLine(0);
-		process.stdout.cursorTo(0);
-		process.stdout.write(
+
+		print(
 			`Scraping cache misses ${asset}. Remaining: ${CACHE_MISSES.length}`,
 		);
 
@@ -233,31 +271,33 @@ const processFile = async (name) => {
 		assets.push(...newAssets);
 	}
 
-	process.stdout.moveCursor(0, 1);
+	console.log();
 
 	var existing = await fs.readdir(CACHE_PATH);
 	while (existing.length > 0) {
 		var file = existing.shift();
 
-		process.stdout.clearLine(0);
-		process.stdout.cursorTo(0);
-		process.stdout.write(
-			`Patching existing ${file}. Remaining: ${existing.length}.`,
-		);
+		print(`Patching existing ${file}. Remaining: ${existing.length}.`);
 
 		var text = await fs.readFile(path.join(CACHE_PATH, file));
 		if (file.includes(".js") || file.includes(".css")) {
 			text = doPatch(text.toString());
 			await fs.writeFile(path.join(CACHE_PATH, file), text.toString());
-			assets.push(
-				...[...new Set(text.match(/\"[A-Fa-f0-9]{20}\"/g))].map((x) =>
-					x.replaceAll('"', ""),
-				),
+
+			var additional = [];
+			additional.push(...new Set(text.match(/\"[A-Fa-f0-9]{20}\"/g)));
+			additional.push(
+				...[
+					...new Set(
+						text.matchAll(/\.exports=.\..\+\"(.*?\..{0,5})\"/g),
+					),
+				].map((x) => x[1]),
 			);
+			assets.push(additional.map((x) => x.replaceAll('"', "")));
 		}
 	}
 
-	process.stdout.moveCursor(0, 1);
+	console.log();
 
 	let rates = [];
 	let lastFinished = Date.now();
@@ -278,9 +318,7 @@ const processFile = async (name) => {
 			: 1;
 		const finishTime = averageRate * (assets.length - i);
 
-		process.stdout.clearLine(0);
-		process.stdout.cursorTo(0);
-		process.stdout.write(
+		print(
 			`Caching asset ${asset}. ` +
 				`${i}/${assets.length - 1} = ${Math.floor(
 					(i / (assets.length - 1)) * 100,

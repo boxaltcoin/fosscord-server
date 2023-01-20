@@ -1,5 +1,24 @@
+/*
+	Fosscord: A FOSS re-implementation and extension of the Discord.com backend.
+	Copyright (C) 2023 Fosscord and Fosscord Contributors
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Affero General Public License as published
+	by the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Affero General Public License for more details.
+	
+	You should have received a copy of the GNU Affero General Public License
+	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 import { ConfigEntity } from "../entities/Config";
-import fs from "fs";
+import fs from "fs/promises";
+import syncFs from "fs";
 import { ConfigValue } from "../config";
 
 // TODO: yaml instead of json
@@ -31,11 +50,14 @@ export const Config = {
 			);
 			try {
 				const overrideConfig = JSON.parse(
-					fs.readFileSync(overridePath, { encoding: "utf8" }),
+					await fs.readFile(overridePath, { encoding: "utf8" }),
 				);
 				config = overrideConfig.merge(config);
 			} catch (error) {
-				fs.writeFileSync(overridePath, JSON.stringify(config, null, 4));
+				await fs.writeFile(
+					overridePath,
+					JSON.stringify(config, null, 4),
+				);
 			}
 		}
 
@@ -79,7 +101,7 @@ function applyConfig(val: ConfigValue) {
 	}
 
 	if (process.env.CONFIG_PATH)
-		fs.writeFileSync(overridePath, JSON.stringify(val, null, 4));
+		syncFs.writeFileSync(overridePath, JSON.stringify(val, null, 4));
 
 	return apply(val);
 }
