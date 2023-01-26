@@ -191,7 +191,7 @@ export async function onLazyRequest(this: WebSocket, { d }: Payload) {
 	check.call(this, LazyRequestSchema, d);
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const { guild_id, typing, channels, activities } = d as LazyRequestSchema;
-	if (!channels) throw new Error("Must provide channel ranges");
+	if (!channels) return; // TODO: new clients use this to request PRESENCE_UPDATE for `members`
 
 	const channel_id = Object.keys(channels || {}).first();
 	if (!channel_id) return;
